@@ -6,7 +6,11 @@ try:
 except ImportError:  # Python 3
     from urllib import parse as urlparse
 
-from django.core.urlresolvers import NoReverseMatch, set_urlconf
+try:
+    from django.urls import NoReverseMatch, set_urlconf
+except ImportError:  # Older Django
+    from django.core.urlresolvers import NoReverseMatch, set_urlconf
+
 from django.template import Context, Template
 from django.test import TestCase
 from django.test.client import RequestFactory
@@ -41,10 +45,19 @@ class SubdomainTestMixin(object):
             'api': 'api',
             'www': 'marketing',
         }, prefix=URL_MODULE_PATH),
-        MIDDLEWARE_CLASSES=(
+        MIDDLEWARE=[
             'django.middleware.common.CommonMiddleware',
             'subdomains.middleware.SubdomainURLRoutingMiddleware',
-        ))
+        ],
+        ALLOWED_HOSTS=(
+            '.%s' % DOMAIN,
+        ),
+        TEMPLATES=[
+            {
+                'BACKEND': 'django.template.backends.django.DjangoTemplates',
+                'APP_DIRS': True,
+            },
+        ])
     def run(self, *args, **kwargs):
         super(SubdomainTestMixin, self).run(*args, **kwargs)
 
